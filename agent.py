@@ -2,14 +2,18 @@
 You'll extend this in later labs.
 """
 import os
-from langchain.chat_models import ChatOpenAI
+from dotenv import load_dotenv
+from langchain_openai import ChatOpenAI
 from langchain.agents import initialize_agent, Tool
 from langchain.memory import ConversationBufferMemory
 
+# Load environment variables from .env file
+load_dotenv()
+
 def create_agent():
-    llm = ChatOpenAI(model_name="z-ai/glm-4.5-air:free", temperature=0)
+    llm = ChatOpenAI(model_name="z-ai/glm-4.5-air:free", temperature=0, base_url="https://openrouter.ai/api/v1")
     memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
-    tools = []  # You'll register a search tool in Lab 2
+    tools = []  # You'll register a search tool in Lab 2
     agent = initialize_agent(
         tools,
         llm,
