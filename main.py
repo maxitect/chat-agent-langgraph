@@ -1,16 +1,49 @@
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+import logging
 from agent import create_agent
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 app = FastAPI(
     title="AI Agent Workshop",
     description="A simple AI agent API built with LangChain and FastAPI",
     version="1.0.0"
 )
-agent = create_agent()
+
+# Add CORS middleware for web frontend integration
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # In production, replace with specific origins
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Initialize agent once at startup
+try:
+    agent = create_agent()
+    logger.info("Agent initialized successfully")
+except Exception as e:
+    logger.error(f"Failed to initialize agent: {e}")
+    agent = None
 
 class Query(BaseModel):
     message: str
+    
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "message": "Hello, how are you?"
+            }
+        }
+
+class ChatResponse(BaseModel):
+    reply: str
+    status: str = "success"
 
 @app.get("/")
 async def root():
@@ -20,17 +53,37 @@ async def root():
             "POST /chat": "Send a message to the AI agent",
             "GET /health": "Check API health status",
             "GET /docs": "View API documentation"
-        }
+        },
+        "version": "1.0.0"
     }
 
-@app.post("/chat")
+@app.post("/chat", response_model=ChatResponse)
 async def chat(query: Query):
+    if not agent:
+        raise HTTPException(status_code=503, detail="Agent not available")
+    
     try:
-        reply = agent.run(query.message)
-        return {"reply": reply}
+        logger.info(f"Received message: {query.message}")
+        
+        # Use invoke instead of deprecated run method
+        response = agent.invoke({"input": query.message})
+        reply = response.get("output", "I apologize, but I couldn't process your request.")
+        
+        logger.info(f"Agent response: {reply}")
+        return ChatResponse(reply=reply)
+        
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Error processing chat request: {e}")
+        raise HTTPException(
+            status_code=500, 
+            detail="An error occurred while processing your request. Please try again."
+        )
 
 @app.get("/health")
 async def health():
-    return {"status": "ok"}
+    agent_status = "ok" if agent else "unavailable"
+    return {
+        "status": "ok",
+        "agent_status": agent_status,
+        "version": "1.0.0"
+    }
