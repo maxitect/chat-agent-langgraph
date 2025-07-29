@@ -1,6 +1,7 @@
 langchain>=0.2.0
 langchain-community>=0.0.1
 langchain-openai
+langgraph
 fastapi
 fastapi[all]
 uvicorn[standard]

@@ -65,9 +65,12 @@ async def chat(query: Query):
     try:
         logger.info(f"Received message: {query.message}")
         
-        # Use invoke instead of deprecated run method
-        response = agent.invoke({"input": query.message})
-        reply = response.get("output", "I apologize, but I couldn't process your request.")
+        # LangGraph agent uses invoke with messages format
+        response = agent.invoke({"messages": [("human", query.message)]})
+        
+        # Extract the final AI message from the response
+        final_message = response.get("messages", [])[-1]
+        reply = final_message.content if hasattr(final_message, 'content') else str(final_message)
         
         logger.info(f"Agent response: {reply}")
         return ChatResponse(reply=reply)
