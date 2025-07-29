@@ -8,3 +8,4 @@ uvicorn[standard]
 python-dotenv
 openai
 tiktoken
+duckduckgo-search
