@@ -8,6 +8,16 @@ bootstrap:
 serve:
 	$(VENV)/bin/uvicorn main:app --reload
 
+frontend:
+	$(VENV)/bin/streamlit run streamlit_app.py --server.port 8501
+
+dev:
+	@echo "Starting both API and Frontend..."
+	@echo "API will run on http://localhost:8000"
+	@echo "Frontend will run on http://localhost:8501"
+	@echo ""
+	@echo "Run 'make serve' in one terminal and 'make frontend' in another"
+
 docker-build:
 	docker build -t ai-agent-workshop .
 

@@ -10,3 +10,5 @@ python-dotenv
 openai
 tiktoken
 duckduckgo-search
+streamlit
+requests
