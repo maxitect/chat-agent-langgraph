@@ -7,7 +7,7 @@ from langchain_openai import ChatOpenAI
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.prebuilt import create_react_agent
 
-from tools.search import search_web
+from tools.search import exa_search
 from tools.add import add_function
 
 # Load environment variables from .env file
@@ -19,7 +19,7 @@ def create_agent():
     
     checkpointer = MemorySaver()
 
-    tools = [search_web, add_function]  # You'll register a search tool in Lab 2
+    tools = [add_function, exa_search]  # You'll register a search tool in Lab 2
     
     # Create ReAct agent with LangGraph
     agent = create_react_agent(llm, tools, checkpointer=checkpointer, verbose=True)
