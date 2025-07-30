@@ -188,48 +188,54 @@ def main():
         with col2:
             submitted = st.form_submit_button("Send 🚀", use_container_width=True)
     
-    # Clear the example query after using it
-    if 'example_query' in st.session_state:
-        del st.session_state.example_query
-    
     # Process user input
-    if submitted and user_input.strip():
-        st.write("🔄 Processing your message...")  # Debug feedback
+    if submitted:
+        # Check for example query first, then user input
+        message_to_send = user_input.strip()
+        if not message_to_send and 'example_query' in st.session_state:
+            message_to_send = st.session_state.example_query.strip()
         
-        # Add user message
-        timestamp = datetime.now().strftime("%H:%M:%S")
-        user_message = {
-            "role": "user",
-            "content": user_input,
-            "timestamp": timestamp
-        }
-        st.session_state.messages.append(user_message)
+        # Clear the example query after using it
+        if 'example_query' in st.session_state:
+            del st.session_state.example_query
         
-        # Show typing indicator and call API
-        with st.spinner("🤖 Agent is thinking..."):
-            response_data = call_agent_api(user_input, st.session_state.session_id)
-        
-        if response_data:
-            # Add agent response
-            agent_response = response_data.get("reply", "Sorry, I couldn't process that.")
-            agent_timestamp = datetime.now().strftime("%H:%M:%S")
+        if message_to_send:
+            st.write("🔄 Processing your message...")  # Debug feedback
             
-            agent_message = {
-                "role": "agent",
-                "content": agent_response,
-                "timestamp": agent_timestamp
+            # Add user message
+            timestamp = datetime.now().strftime("%H:%M:%S")
+            user_message = {
+                "role": "user",
+                "content": message_to_send,
+                "timestamp": timestamp
             }
-            st.session_state.messages.append(agent_message)
+            st.session_state.messages.append(user_message)
             
-            # Update session ID if it changed
-            if "session_id" in response_data:
-                st.session_state.session_id = response_data["session_id"]
+            # Show typing indicator and call API
+            with st.spinner("🤖 Agent is thinking..."):
+                response_data = call_agent_api(message_to_send, st.session_state.session_id)
             
-            st.success("✅ Response received! Refreshing chat...")
-            time.sleep(1)  # Brief pause before refresh
-            st.rerun()
-        else:
-            st.error("❌ Failed to get response from agent. Please try again.")
+            if response_data:
+                # Add agent response
+                agent_response = response_data.get("reply", "Sorry, I couldn't process that.")
+                agent_timestamp = datetime.now().strftime("%H:%M:%S")
+                
+                agent_message = {
+                    "role": "agent",
+                    "content": agent_response,
+                    "timestamp": agent_timestamp
+                }
+                st.session_state.messages.append(agent_message)
+                
+                # Update session ID if it changed
+                if "session_id" in response_data:
+                    st.session_state.session_id = response_data["session_id"]
+                
+                st.success("✅ Response received! Refreshing chat...")
+                time.sleep(1)  # Brief pause before refresh
+                st.rerun()
+            else:
+                st.error("❌ Failed to get response from agent. Please try again.")
     
     # Footer
     st.divider()
