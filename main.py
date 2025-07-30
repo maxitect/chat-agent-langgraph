@@ -2,6 +2,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import logging
+import uuid
 from agent import create_agent
 
 # Configure logging
@@ -33,16 +34,19 @@ except Exception as e:
 
 class Query(BaseModel):
     message: str
+    session_id: str = None  # Optional session ID for conversation continuity
     
     class Config:
         json_schema_extra = {
             "example": {
-                "message": "Hello, how are you?"
+                "message": "Hello, how are you?",
+                "session_id": "optional-session-123"
             }
         }
 
 class ChatResponse(BaseModel):
     reply: str
+    session_id: str
     status: str = "success"
 
 @app.get("/")
@@ -65,15 +69,21 @@ async def chat(query: Query):
     try:
         logger.info(f"Received message: {query.message}")
         
-        # LangGraph agent uses invoke with messages format
-        response = agent.invoke({"messages": [("human", query.message)]})
+        # Generate session ID if not provided (for conversation continuity)
+        session_id = query.session_id or str(uuid.uuid4())
+        
+        # Create config with thread_id for checkpointer
+        config = {"configurable": {"thread_id": session_id}}
+        
+        # LangGraph agent uses invoke with messages format and config
+        response = agent.invoke({"messages": [("human", query.message)]}, config=config)
         
         # Extract the final AI message from the response
         final_message = response.get("messages", [])[-1]
         reply = final_message.content if hasattr(final_message, 'content') else str(final_message)
         
         logger.info(f"Agent response: {reply}")
-        return ChatResponse(reply=reply)
+        return ChatResponse(reply=reply, session_id=session_id)
         
     except Exception as e:
         logger.error(f"Error processing chat request: {e}")
