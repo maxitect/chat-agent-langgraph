@@ -13,21 +13,23 @@ from tools.add import add_function
 # Load environment variables from .env file
 load_dotenv()
 
+
 def create_agent():
-    llm = ChatOpenAI(model_name="qwen/qwen3-coder:free", temperature=0, base_url="https://openrouter.ai/api/v1")
-    
-    
+    llm = ChatOpenAI(model_name="gpt-4.1-nano", temperature=0)
+
     checkpointer = MemorySaver()
 
-    tools = [add_function, exa_search]  # You'll register a search tool in Lab 2
-    
-    # Create ReAct agent with LangGraph
-    agent = create_react_agent(llm, tools, checkpointer=checkpointer, verbose=True)
-    
+    # You'll register a search tool in Lab 2
+    tools = [add_function]
 
-    #print(agent.get_graph().draw_mermaid_png())
-    
+    # Create ReAct agent with LangGraph
+    agent = create_react_agent(
+        llm, tools, checkpointer=checkpointer, verbose=True)
+
+    # print(agent.get_graph().draw_mermaid_png())
+
     return agent
+
 
 if __name__ == "__main__":
     agent = create_agent()
@@ -44,19 +46,19 @@ if __name__ == "__main__":
         try:
             config = {"configurable": {"thread_id": "first_thread"}}
 
-
             # LangGraph uses invoke with messages format
-            stream_mode = input("Enable streaming? (y/n): ").strip().lower() == "y"
+            stream_mode = input(
+                "Enable streaming? (y/n): ").strip().lower() == "y"
             if stream_mode:
                 for chunk in agent.stream({"messages": [("human", user_input)]}, config=config, stream_mode="updates"):
                     print(chunk)
                     print("--------------------------------")
             else:
-                response = agent.invoke({"messages": [("human", user_input)]}, config=config, print_mode="tree")
+                response = agent.invoke(
+                    {"messages": [("human", user_input)]}, config=config, print_mode="tree")
                 # Extract the final AI message from the response
                 final_message = response["messages"][-1].content
                 print("Agent:", final_message)
-
 
         except Exception as e:
             print(f"Error: {e}")
