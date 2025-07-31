@@ -20,7 +20,7 @@ def create_agent():
     checkpointer = MemorySaver()
 
     # You'll register a search tool in Lab 2
-    tools = [add_function]
+    tools = [add_function, exa_search]
 
     # Create ReAct agent with LangGraph
     agent = create_react_agent(
